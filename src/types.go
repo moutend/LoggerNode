@@ -5,8 +5,8 @@ type LogMessage struct {
 	Source            string `json:"source"`
 	Version           string `json:"version"`
 	Message           string `json:"message"`
-	Thread            int64  `json:"thread"`
-	UnixTimestampSec  int64  `json:"timestampSec"`
-	UnixTimestampNano int64  `json:"timestampNano"`
+	ThreadId          int64  `json:"threadId"`
+	UnixTimestampSec  int64  `json:"unixTimestampSec"`
+	UnixTimestampNano int64  `json:"unixTimestampNano"`
 	Path              string `json:"path"`
 }

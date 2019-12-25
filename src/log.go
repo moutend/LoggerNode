@@ -51,7 +51,7 @@ func (le *LogEndpoint) postLog(w http.ResponseWriter, r *http.Request) error {
 	if _, err := io.Copy(b, r.Body); err != nil {
 		return fmt.Errorf("Requested JSON is broken")
 	}
-
+	fmt.Printf("@@@ %s\n", b.Bytes())
 	var req postLogRequest
 
 	if err := json.Unmarshal(b.Bytes(), &req); err != nil {
@@ -61,8 +61,9 @@ func (le *LogEndpoint) postLog(w http.ResponseWriter, r *http.Request) error {
 	for _, v := range req.Messages {
 		le.fileWriteWG.Add(1)
 		go func(v LogMessage) {
-			err := writeLogFile(le.logBaseDir, v)
-			log.Println(err)
+			if err := writeLogFile(le.logBaseDir, v); err != nil {
+				log.Println(err)
+			}
 			le.fileWriteWG.Done()
 		}(v)
 	}
