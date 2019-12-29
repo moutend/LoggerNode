@@ -1,4 +1,4 @@
-package main
+package types
 
 type LogMessage struct {
 	Level             string `json:"level"`

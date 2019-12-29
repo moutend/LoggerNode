@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"bytes"
@@ -12,18 +12,20 @@ import (
 	"net/http"
 	"path/filepath"
 	"sync"
+
+	"github.com/moutend/LoggerNode/pkg/types"
 )
 
 type postLogRequest struct {
-	Messages []LogMessage `json:"messages"`
+	Messages []types.LogMessage `json:"messages"`
 }
 
-type LogEndpoint struct {
+type logEndpoint struct {
 	logBaseDir  string
 	fileWriteWG *sync.WaitGroup
 }
 
-func writeLogFile(baseDir string, v LogMessage) error {
+func writeLogFile(baseDir string, v types.LogMessage) error {
 	data, err := json.Marshal(v)
 
 	if err != nil {
@@ -45,7 +47,7 @@ func writeLogFile(baseDir string, v LogMessage) error {
 	return nil
 }
 
-func (le *LogEndpoint) postLog(w http.ResponseWriter, r *http.Request) error {
+func (le *logEndpoint) PostLog(w http.ResponseWriter, r *http.Request) error {
 	b := &bytes.Buffer{}
 
 	if _, err := io.Copy(b, r.Body); err != nil {
@@ -60,7 +62,7 @@ func (le *LogEndpoint) postLog(w http.ResponseWriter, r *http.Request) error {
 
 	for _, v := range req.Messages {
 		le.fileWriteWG.Add(1)
-		go func(v LogMessage) {
+		go func(v types.LogMessage) {
 			if err := writeLogFile(le.logBaseDir, v); err != nil {
 				log.Println(err)
 			}
@@ -74,12 +76,12 @@ func (le *LogEndpoint) postLog(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func (le *LogEndpoint) Wait() {
+func (le *logEndpoint) Wait() {
 	le.fileWriteWG.Wait()
 }
 
-func NewLogEndpoint(logBaseDir string) *LogEndpoint {
-	return &LogEndpoint{
+func NewLogEndpoint(logBaseDir string) *logEndpoint {
+	return &logEndpoint{
 		logBaseDir:  logBaseDir,
 		fileWriteWG: &sync.WaitGroup{},
 	}

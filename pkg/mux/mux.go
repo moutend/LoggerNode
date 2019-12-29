@@ -1,4 +1,4 @@
-package main
+package mux
 
 import (
 	"bytes"
@@ -62,7 +62,7 @@ func (m *Mux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func NewMux() *Mux {
+func New() *Mux {
 	m := &Mux{
 		patterns: make(map[string]handleFunc),
 	}

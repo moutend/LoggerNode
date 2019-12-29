@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 )
 
-func main() {
+func Run(args []string) error {
 	u, err := user.Current()
 
 	if err != nil {
@@ -17,7 +17,7 @@ func main() {
 	logBaseDir := filepath.Join(u.HomeDir, "AppData", "Roaming", "ScreenReaderX", "EventLog")
 	os.MkdirAll(logBaseDir, 0755)
 
-	le := NewLogEndpoint(logBaseDir)
+	le := api.NewLogEndpoint(logBaseDir)
 
 	mux := NewMux()
 
