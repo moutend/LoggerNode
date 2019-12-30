@@ -2,20 +2,26 @@ package app
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
+	"math/rand"
 	"net/http"
-	"os"
 	"os/user"
 	"path/filepath"
 	"sync"
+	"time"
 
 	"github.com/moutend/LoggerNode/pkg/api"
+	"github.com/moutend/LoggerNode/pkg/loops"
 	"github.com/moutend/LoggerNode/pkg/mux"
+	"github.com/moutend/LoggerNode/pkg/types"
 )
 
 type app struct {
 	m         *sync.Mutex
 	wg        *sync.WaitGroup
+	message   chan types.LogMessage
+	quit      chan struct{}
 	server    *http.Server
 	isRunning bool
 }
@@ -27,17 +33,43 @@ func (a *app) setup() error {
 		return err
 	}
 
-	logBaseDir := filepath.Join(u.HomeDir, "AppData", "Roaming", "ScreenReaderX", "EventLog")
-	os.MkdirAll(logBaseDir, 0755)
+	rand.Seed(time.Now().Unix())
+	p := make([]byte, 16)
 
-	le := api.NewLogEndpoint(logBaseDir)
+	if _, err := rand.Read(p); err != nil {
+		return err
+	}
+
+	fileName := fmt.Sprintf("EventLog-%s.txt", hex.EncodeToString(p))
+	outputPath := filepath.Join(u.HomeDir, "AppData", "Roaming", "ScreenReaderX", "EventLog", fileName)
+
+	a.message = make(chan types.LogMessage, 1024)
+	a.quit = make(chan struct{})
+
+	logLoop := &loops.LogLoop{
+		Quit:       a.quit,
+		Message:    a.message,
+		OutputPath: outputPath,
+	}
+
+	a.wg.Add(1)
+
+	go func() {
+		if err := logLoop.Run(); err != nil {
+			panic(err)
+		}
+
+		a.wg.Done()
+	}()
+
+	le := api.NewLogEndpoint(a.message)
 
 	mux := mux.New()
 
 	mux.Post("/v1/log", le.PostLog)
 
 	a.server = &http.Server{
-		Addr:    ":4000",
+		Addr:    ":7901",
 		Handler: mux,
 	}
 
@@ -73,6 +105,8 @@ func (a *app) teardown() error {
 	if err := a.server.Shutdown(context.TODO()); err != nil {
 		return err
 	}
+
+	a.quit <- struct{}{}
 
 	a.wg.Wait()
 
