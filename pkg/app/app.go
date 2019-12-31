@@ -40,7 +40,7 @@ func (a *app) setup() error {
 		return err
 	}
 
-	fileName := fmt.Sprintf("EventLog-%s.txt", hex.EncodeToString(p))
+	fileName := fmt.Sprintf("Event-%s.txt", hex.EncodeToString(p))
 	outputPath := filepath.Join(u.HomeDir, "AppData", "Roaming", "ScreenReaderX", "EventLog", fileName)
 
 	a.message = make(chan types.LogMessage, 1024)
