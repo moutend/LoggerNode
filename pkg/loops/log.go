@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
-	"net/url"
+	"log"
 	"os"
 	"path/filepath"
 	"time"
@@ -17,7 +17,6 @@ type LogLoop struct {
 	Message           chan types.LogMessage
 	OutputPath        string
 	HeartbeatDuration time.Duration
-	HeartbeatURL      *url.URL
 }
 
 func (l *LogLoop) Run() error {
@@ -29,8 +28,7 @@ func (l *LogLoop) Run() error {
 	for {
 		select {
 		case <-time.After(l.HeartbeatDuration):
-			// go http.Post(l.HeartbeatURL.String(), `application/json`, nil)
-
+			log.Println("LoggerNode is active")
 			continue
 		case <-l.Quit:
 			return nil
