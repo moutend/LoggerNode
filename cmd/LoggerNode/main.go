@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/moutend/LoggerNode/pkg/app"
+	"github.com/moutend/LoggerNode/pkg/types"
 )
 
 func main() {
@@ -38,16 +39,11 @@ func run(args []string) error {
 	outputPath := filepath.Join(u.HomeDir, "AppData", "Roaming", "ScreenReaderX", "SystemLog", fileName)
 	os.MkdirAll(filepath.Dir(outputPath), 0755)
 
-	file, err := os.OpenFile(outputPath, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0644)
-
-	if err != nil {
-		return err
-	}
-
-	defer file.Close()
+	output := types.NewBackgroundWriter(outputPath)
+	defer output.Close()
 
 	log.SetFlags(log.Llongfile | log.LUTC)
-	log.SetOutput(file)
+	log.SetOutput(output)
 
 	app := app.New()
 
