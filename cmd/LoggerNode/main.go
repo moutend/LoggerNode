@@ -42,7 +42,7 @@ func run(args []string) error {
 	output := types.NewBackgroundWriter(outputPath)
 	defer output.Close()
 
-	log.SetFlags(log.Llongfile | log.LUTC)
+	log.SetFlags(log.Ldate | log.Ltime | log.LUTC | log.Llongfile)
 	log.SetOutput(output)
 
 	app := app.New()
