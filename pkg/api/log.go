@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 
 	"github.com/moutend/LoggerNode/pkg/types"
@@ -15,34 +16,46 @@ type postLogRequest struct {
 }
 
 type logEndpoint struct {
-	message chan types.LogMessage
+	output io.Writer
 }
 
-func (l *logEndpoint) PostLog(w http.ResponseWriter, r *http.Request) error {
+func (l *logEndpoint) Post(w http.ResponseWriter, r *http.Request) {
 	b := &bytes.Buffer{}
 
 	if _, err := io.Copy(b, r.Body); err != nil {
-		return fmt.Errorf("Requested JSON is broken")
+		log.Println(err)
+		http.Error(w, `{"errors":[{"message":"invalid request","path":[]}],"data":null}`, http.StatusBadRequest)
+		return
 	}
+
 	var req postLogRequest
 
 	if err := json.Unmarshal(b.Bytes(), &req); err != nil {
-		return fmt.Errorf("Requested JSON is invalid")
+		log.Println(err)
+		http.Error(w, `{"errors":[{"message":"invalid request","path":[]}],"data":null}`, http.StatusBadRequest)
+		return
 	}
 
-	for _, v := range req.Messages {
-		l.message <- v
+	for _, message := range req.Messages {
+		go func(v types.LogMessage) {
+			data, err := json.Marshal(v)
+
+			if err != nil {
+				return
+			}
+			if _, err := io.Copy(l.output, bytes.NewBuffer(data)); err != nil {
+				return
+			}
+		}(message)
 	}
 
-	if _, err := io.WriteString(w, "{}"); err != nil {
-		return fmt.Errorf("Internal error")
+	if _, err := io.WriteString(w, fmt.Sprintf("{\"data\":{\"saved\":%d}}", len(req.Messages))); err != nil {
+		log.Println(err)
 	}
-
-	return nil
 }
 
-func NewLogEndpoint(message chan types.LogMessage) *logEndpoint {
+func NewLogEndpoint(outputPath string) *logEndpoint {
 	return &logEndpoint{
-		message: message,
+		output: types.NewBackgroundWriter(outputPath),
 	}
 }
