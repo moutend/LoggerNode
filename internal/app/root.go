@@ -13,8 +13,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/moutend/LoggerNode/pkg/api"
-	"github.com/moutend/LoggerNode/pkg/types"
+	"github.com/moutend/LoggerNode/internal/api"
+	"github.com/moutend/LoggerNode/internal/types"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/valve"

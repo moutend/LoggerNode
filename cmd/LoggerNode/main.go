@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/moutend/LoggerNode/pkg/app"
+	"github.com/moutend/LoggerNode/internal/app"
 )
 
 func main() {

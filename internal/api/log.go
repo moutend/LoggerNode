@@ -8,7 +8,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/moutend/LoggerNode/pkg/types"
+	"github.com/moutend/LoggerNode/internal/types"
 )
 
 type postLogRequest struct {
