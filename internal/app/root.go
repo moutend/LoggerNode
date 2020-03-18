@@ -61,7 +61,7 @@ func rootRunE(cmd *cobra.Command, args []string) error {
 	router.Post("/v1/log", logEndpoint.Post)
 
 	server := http.Server{
-		Addr:    "localhost:7901",
+		Addr:    ":7901",
 		Handler: chi.ServerBaseContext(baseCtx, router),
 	}
 
