@@ -35,18 +35,24 @@ func (l *logEndpoint) Post(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, `{"errors":[{"message":"invalid request","path":[]}],"data":null}`, http.StatusBadRequest)
 		return
 	}
-
 	for _, message := range req.Messages {
-		go func(v types.LogMessage) {
-			data, err := json.Marshal(v)
+		data, err := json.Marshal(message)
 
-			if err != nil {
-				return
-			}
-			if _, err := io.Copy(l.output, bytes.NewBuffer(data)); err != nil {
-				return
-			}
-		}(message)
+		if err != nil {
+			log.Println(err)
+			http.Error(w, `{"errors":[{"message":"invalid request","path":[]}],"data":null}`, http.StatusBadRequest)
+			return
+		}
+		if _, err := io.Copy(l.output, bytes.NewBuffer(data)); err != nil {
+			log.Println(err)
+			http.Error(w, `{"errors":[{"message":"invalid request","path":[]}],"data":null}`, http.StatusBadRequest)
+			return
+		}
+		if _, err := io.WriteString(l.output, "\n"); err != nil {
+			log.Println(err)
+			http.Error(w, `{"errors":[{"message":"invalid request","path":[]}],"data":null}`, http.StatusBadRequest)
+			return
+		}
 	}
 
 	if _, err := io.WriteString(w, fmt.Sprintf("{\"data\":{\"saved\":%d}}", len(req.Messages))); err != nil {

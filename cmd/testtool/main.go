@@ -5,10 +5,17 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 )
 
 func main() {
-	res, err := http.Post("http://localhost:7901/v1/log", "application/json", bytes.NewBufferString(`{
+	if len(os.Args) < 2 {
+		return
+	}
+
+fmt.Println(http.MethodPost, os.Args[1])
+
+	res, err := http.Post(os.Args[1], "application/json", bytes.NewBufferString(`{
   "messages": [
     {
       "level": "INFO",
