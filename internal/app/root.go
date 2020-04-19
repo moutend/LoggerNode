@@ -11,7 +11,10 @@ import (
 	"os/signal"
 	"os/user"
 	"path/filepath"
+	"strings"
 	"time"
+
+	"github.com/spf13/viper"
 
 	"github.com/moutend/LoggerNode/internal/api"
 	"github.com/moutend/LoggerNode/internal/types"
@@ -27,6 +30,17 @@ var RootCommand = &cobra.Command{
 }
 
 func rootRunE(cmd *cobra.Command, args []string) error {
+	if path, _ := cmd.Flags().GetString("config"); path != "" {
+		viper.SetConfigFile(path)
+	}
+
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))
+	viper.AutomaticEnv()
+
+	if err := viper.ReadInConfig(); err != nil {
+		return err
+	}
+
 	rand.Seed(time.Now().Unix())
 	p := make([]byte, 16)
 
@@ -40,7 +54,7 @@ func rootRunE(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fileName := fmt.Sprintf("LoggerNode-%s.txt", hex.EncodeToString(p))
+	fileName := fmt.Sprintf("LogServer-%s.txt", hex.EncodeToString(p))
 	outputPath := filepath.Join(myself.HomeDir, "AppData", "Roaming", "ScreenReaderX", "Logs", "SystemLog", fileName)
 
 	bw := types.NewBackgroundWriter(outputPath)
@@ -61,7 +75,7 @@ func rootRunE(cmd *cobra.Command, args []string) error {
 	router.Post("/v1/log", logEndpoint.Post)
 
 	server := http.Server{
-		Addr:    ":7901",
+		Addr:    viper.GetString("server.address"),
 		Handler: chi.ServerBaseContext(baseCtx, router),
 	}
 
@@ -90,4 +104,8 @@ func rootRunE(cmd *cobra.Command, args []string) error {
 	log.Printf("Listening on %s\n", server.Addr)
 
 	return server.ListenAndServe()
+}
+
+func init() {
+	RootCommand.PersistentFlags().StringP("config", "c", "", "Path to configuration file")
 }
