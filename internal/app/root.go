@@ -41,7 +41,7 @@ func rootRunE(cmd *cobra.Command, args []string) error {
 	}
 
 	fileName := fmt.Sprintf("LoggerNode-%s.txt", hex.EncodeToString(p))
-	outputPath := filepath.Join(myself.HomeDir, "AppData", "Roaming", "ScreenReaderX", "SystemLog", fileName)
+	outputPath := filepath.Join(myself.HomeDir, "AppData", "Roaming", "ScreenReaderX", "Logs", "SystemLog", fileName)
 
 	bw := types.NewBackgroundWriter(outputPath)
 	defer bw.Close()
@@ -53,7 +53,7 @@ func rootRunE(cmd *cobra.Command, args []string) error {
 	baseCtx := valv.Context()
 
 	logEndpoint := api.NewLogEndpoint(
-		filepath.Join(myself.HomeDir, "AppData", "Roaming", "ScreenReaderX", "EventLog",
+		filepath.Join(myself.HomeDir, "AppData", "Roaming", "ScreenReaderX", "Logs", "EventLog",
 			fmt.Sprintf("Event-%s.txt", hex.EncodeToString(p)),
 		))
 
