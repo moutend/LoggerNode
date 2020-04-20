@@ -103,7 +103,11 @@ func rootRunE(cmd *cobra.Command, args []string) error {
 
 	log.Printf("Listening on %s\n", server.Addr)
 
-	return server.ListenAndServe()
+	if err := server.ListenAndServe(); err != http.ErrServerClosed {
+		return err
+	}
+
+	return nil
 }
 
 func init() {
