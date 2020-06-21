@@ -3,18 +3,18 @@ package app
 import (
 	"context"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"math/rand"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
 	"os/user"
 	"path/filepath"
-	"strings"
 	"time"
-
-	"github.com/spf13/viper"
 
 	"github.com/moutend/LoggerNode/internal/api"
 	"github.com/moutend/LoggerNode/internal/types"
@@ -30,17 +30,6 @@ var RootCommand = &cobra.Command{
 }
 
 func rootRunE(cmd *cobra.Command, args []string) error {
-	if path, _ := cmd.Flags().GetString("config"); path != "" {
-		viper.SetConfigFile(path)
-	}
-
-	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))
-	viper.AutomaticEnv()
-
-	if err := viper.ReadInConfig(); err != nil {
-		return err
-	}
-
 	rand.Seed(time.Now().Unix())
 	p := make([]byte, 16)
 
@@ -74,8 +63,32 @@ func rootRunE(cmd *cobra.Command, args []string) error {
 	router := chi.NewRouter()
 	router.Post("/v1/log", logEndpoint.Post)
 
-	server := http.Server{
-		Addr:    viper.GetString("server.address"),
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+
+	if err != nil {
+		return err
+	}
+
+	serverAddr := listener.Addr().(*net.TCPAddr).String()
+
+	serverConfig, err := json.Marshal(struct {
+		Addr string `json:"addr"`
+	}{
+		Addr: serverAddr,
+	})
+
+	if err != nil {
+		return err
+	}
+
+	serverConfigPath := filepath.Join(myself.HomeDir, "AppData", "Roaming", "ScreenReaderX", "Server", "LogServer.json")
+	os.MkdirAll(filepath.Dir(serverConfigPath), 0755)
+
+	if err := ioutil.WriteFile(serverConfigPath, serverConfig, 0644); err != nil {
+		return err
+	}
+
+	server := &http.Server{
 		Handler: chi.ServerBaseContext(baseCtx, router),
 	}
 
@@ -101,15 +114,11 @@ func rootRunE(cmd *cobra.Command, args []string) error {
 		}
 	}()
 
-	log.Printf("Listening on %s\n", server.Addr)
+	log.Printf("Listening on %s\n", serverAddr)
 
-	if err := server.ListenAndServe(); err != http.ErrServerClosed {
+	if err := server.Serve(listener); err != http.ErrServerClosed {
 		return err
 	}
 
 	return nil
-}
-
-func init() {
-	RootCommand.PersistentFlags().StringP("config", "c", "", "Path to configuration file")
 }
